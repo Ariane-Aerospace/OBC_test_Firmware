@@ -26,6 +26,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "task_list.h"
 #include "usbd_cdc_if.h"
 /* USER CODE END Includes */
 
@@ -46,16 +47,19 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
+osThreadId taskHandlerHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-
+void blinkLD1();
+void blinkLD2();
+void blinkLD3();
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void const * argument);
+void TaskHandler(void const * argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -99,13 +103,17 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
+
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
   osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 512);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+
+  /* definition and creation of taskHandler */
+  osThreadDef(taskHandler, TaskHandler, osPriorityIdle, 0, 128);
+  taskHandlerHandle = osThreadCreate(osThread(taskHandler), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -125,19 +133,79 @@ void StartDefaultTask(void const * argument)
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN StartDefaultTask */
+  uint8_t received=0;
   /* Infinite loop */
   for(;;)
   {
-	  uint8_t data = 0xAA;
-	  CDC_Transmit_FS(&data, 1);
-    osDelay(1000);
+	  	    CDC_Transmit_FS(&received,1);
+	  	    blinkLD1();
+	 		if (getDataFromQueue(&received) != 0){
+	 			blinkLD2();//err
+	 		}
+	 		else if(received==BLINK_LD3)
+	 		{
+	 			blinkLD3();
+	 		}
+
+	 	  	//надо ли тут задержку
+	 	  	osDelay(500);
+	 // osDelay(500);
+	 // blinkLD2();
   }
   /* USER CODE END StartDefaultTask */
 }
 
+/* USER CODE BEGIN Header_TaskHandler */
+/**
+* @brief Function implementing the taskHandler thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_TaskHandler */
+void TaskHandler(void const * argument)
+{
+  /* USER CODE BEGIN TaskHandler */
+  //int received=0;
+  /* Infinite loop */
+  for(;;)
+  {
+	  //blinkLD3();
+	 /* while(xQueueSend(taskQueue, 1, portMAX_DELAY) != pdPASS);
+
+		if (xQueueReceive(taskQueue, &received, portMAX_DELAY) != pdTRUE){
+			//err
+		}
+		else
+		{
+			if(received==BLINK_LD3) BlinkLD3(NULL);
+		}
+
+	  	//надо ли тут задержку*/
+	  	//osDelay(5000);
+  }
+  /* USER CODE END TaskHandler */
+}
+
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
-
+void blinkLD1()
+{
+	HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+	osDelay(500);
+	HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+}
+void blinkLD2()
+{
+	HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+	osDelay(500);
+	HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+}
+void blinkLD3()
+{
+	HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+	osDelay(500);
+	HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+}
 /* USER CODE END Application */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

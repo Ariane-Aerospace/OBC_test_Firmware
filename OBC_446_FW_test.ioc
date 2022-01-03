@@ -1,7 +1,7 @@
 #MicroXplorer Configuration settings - do not modify
 FREERTOS.FootprintOK=true
 FREERTOS.IPParameters=Tasks01,configUSE_NEWLIB_REENTRANT,FootprintOK
-FREERTOS.Tasks01=defaultTask,0,512,StartDefaultTask,Default,NULL,Dynamic,NULL,NULL
+FREERTOS.Tasks01=defaultTask,0,512,StartDefaultTask,Default,NULL,Dynamic,NULL,NULL;taskHandler,-3,128,TaskHandler,Default,NULL,Dynamic,NULL,NULL
 FREERTOS.configUSE_NEWLIB_REENTRANT=1
 File.Version=6
 KeepUserPlacement=false
@@ -161,7 +161,7 @@ ProjectManager.LastFirmware=true
 ProjectManager.LibraryCopy=1
 ProjectManager.MainLocation=Core/Src
 ProjectManager.NoMain=false
-ProjectManager.PreviousToolchain=
+ProjectManager.PreviousToolchain=STM32CubeIDE
 ProjectManager.ProjectBuild=false
 ProjectManager.ProjectFileName=OBC_446_FW_test.ioc
 ProjectManager.ProjectName=OBC_446_FW_test
