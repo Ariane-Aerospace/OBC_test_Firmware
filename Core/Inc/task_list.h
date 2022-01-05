@@ -1,14 +1,16 @@
-#ifndef __TASK_LIST__
-#define __TASK_LIST__
+/*
+ * task_list.h
+ *
+ *  Created on: Jan 5, 2022
+ *      Author: Lyudmila Selezneva
+ */
 
-#include "FreeRTOS.h"
-#include "task.h"
-#include "main.h"
-#include "cmsis_os.h"
-/* Private defines -----------------------------------------------------------*/
-#define BLINK_LD3 1
+#ifndef INC_TASK_LIST_H_
+#define INC_TASK_LIST_H_
 
-int getDataFromQueue(uint8_t* Buf);
+#define BLINK_LD2 2
+#define BLINK_LD3 3
 
+int putMsgIntoQueue(uint8_t data);
 
-#endif
+#endif /* INC_TASK_LIST_H_ */

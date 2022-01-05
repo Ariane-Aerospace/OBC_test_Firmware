@@ -47,9 +47,11 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
+
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
-osThreadId taskHandlerHandle;
+osThreadId usbTaskHandle;
+osMessageQId taskQueueHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -59,7 +61,7 @@ void blinkLD3();
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void const * argument);
-void TaskHandler(void const * argument);
+void UsbTask(void const * argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -102,8 +104,13 @@ void MX_FREERTOS_Init(void) {
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
-  /* USER CODE BEGIN RTOS_QUEUES */
+  /* Create the queue(s) */
+  /* definition and creation of taskQueue */
+  osMessageQDef(taskQueue, 16, uint8_t);
+  taskQueueHandle = osMessageCreate(osMessageQ(taskQueue), NULL);
 
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -111,9 +118,9 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 512);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
-  /* definition and creation of taskHandler */
-  osThreadDef(taskHandler, TaskHandler, osPriorityIdle, 0, 128);
-  taskHandlerHandle = osThreadCreate(osThread(taskHandler), NULL);
+  /* definition and creation of usbTask */
+  osThreadDef(usbTask, UsbTask, osPriorityIdle, 0, 128);
+  usbTaskHandle = osThreadCreate(osThread(usbTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -133,57 +140,38 @@ void StartDefaultTask(void const * argument)
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN StartDefaultTask */
-  uint8_t received=0;
   /* Infinite loop */
   for(;;)
   {
-	  	    CDC_Transmit_FS(&received,1);
-	  	    blinkLD1();
-	 		if (getDataFromQueue(&received) != 0){
-	 			blinkLD2();//err
-	 		}
-	 		else if(received==BLINK_LD3)
-	 		{
-	 			blinkLD3();
-	 		}
-
-	 	  	//надо ли тут задержку
-	 	  	osDelay(500);
-	 // osDelay(500);
-	 // blinkLD2();
+	  osDelay(1000);
   }
   /* USER CODE END StartDefaultTask */
 }
 
-/* USER CODE BEGIN Header_TaskHandler */
+/* USER CODE BEGIN Header_UsbTask */
 /**
-* @brief Function implementing the taskHandler thread.
+* @brief Function implementing the usbTask thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_TaskHandler */
-void TaskHandler(void const * argument)
+/* USER CODE END Header_UsbTask */
+void UsbTask(void const * argument)
 {
-  /* USER CODE BEGIN TaskHandler */
-  //int received=0;
+  /* USER CODE BEGIN UsbTask */
   /* Infinite loop */
   for(;;)
   {
-	  //blinkLD3();
-	 /* while(xQueueSend(taskQueue, 1, portMAX_DELAY) != pdPASS);
+	blinkLD1();
 
-		if (xQueueReceive(taskQueue, &received, portMAX_DELAY) != pdTRUE){
-			//err
-		}
-		else
-		{
-			if(received==BLINK_LD3) BlinkLD3(NULL);
-		}
+    osEvent event = osMessageGet(taskQueueHandle, 100);
+    uint8_t dataRX = event.value.v;
+    if(dataRX==BLINK_LD2) blinkLD2();
+    if(dataRX==BLINK_LD3) blinkLD3();
+    CDC_Transmit_FS(&dataRX, 1);
+    osDelay(1000);
 
-	  	//надо ли тут задержку*/
-	  	//osDelay(5000);
   }
-  /* USER CODE END TaskHandler */
+  /* USER CODE END UsbTask */
 }
 
 /* Private application code --------------------------------------------------*/
@@ -205,6 +193,17 @@ void blinkLD3()
 	HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
 	osDelay(500);
 	HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+}
+int putMsgIntoQueue(uint8_t data)
+{
+	if(osMessagePut(taskQueueHandle, data, 100)== osErrorOS)
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
 }
 /* USER CODE END Application */
 

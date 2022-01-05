@@ -32,6 +32,7 @@
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
+
 /* USER CODE END PV */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
@@ -94,7 +95,7 @@ uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
 uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
 /* USER CODE BEGIN PRIVATE_VARIABLES */
-xQueueHandle taskQueue;
+
 /* USER CODE END PRIVATE_VARIABLES */
 
 /**
@@ -155,9 +156,6 @@ static int8_t CDC_Init_FS(void)
   /* Set Application Buffers */
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 0);
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
-
-  taskQueue = xQueueCreate(5, sizeof (uint8_t));
-
   return (USBD_OK);
   /* USER CODE END 3 */
 }
@@ -266,9 +264,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
   /* USER CODE BEGIN 6 */
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
-
-  xQueueSend(taskQueue, &Buf[0], portMAX_DELAY);//wait while numbers 'll be put into queue
-  //CDC_Transmit_FS(&Buf[0],1);
+  putMsgIntoQueue(Buf[0]);
   return (USBD_OK);
   /* USER CODE END 6 */
 }
@@ -322,18 +318,7 @@ static int8_t CDC_TransmitCplt_FS(uint8_t *Buf, uint32_t *Len, uint8_t epnum)
 }
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_IMPLEMENTATION */
-int getDataFromQueue(uint8_t* Buf)
-{
-	if(xQueueReceive(taskQueue, &Buf[0], portMAX_DELAY)!= pdTRUE)
-	{
-		return 1;//err code
-	}
-	else
-	{
-		return 0; //ok
-	}
 
-}
 /* USER CODE END PRIVATE_FUNCTIONS_IMPLEMENTATION */
 
 /**
